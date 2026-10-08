@@ -40,3 +40,6 @@ crash.*.log
 *.njsproj
 *.sln
 *.sw?
+
+# Local Lambda deployment bundle
+backend/backend.zip
