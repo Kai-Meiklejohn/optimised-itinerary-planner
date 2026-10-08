@@ -1,0 +1,42 @@
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+logs/
+*.log
+*.local
+
+# Credentials and local configuration. Only templates belong in Git.
+.env
+.env.*
+!.env.example
+!.env.*.example
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Terraform state and plans may contain sensitive values.
+**/.terraform/
+**/.terraform-build/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+**/tfplan
+**/plan_output*.txt
+.terraform.tfstate.lock.info
+crash.*.log
+
+# Editor and operating-system files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

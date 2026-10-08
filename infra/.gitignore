@@ -1,0 +1,14 @@
+# Local Terraform working files - never commit state or plans
+.terraform/
+.terraform-build/
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.bak-*
+*.tfplan
+*.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

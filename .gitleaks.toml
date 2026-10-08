@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "amazon-location-browser-key"
+description = "Amazon Location browser API key"
+regex = '''v1\.public\.[A-Za-z0-9_.-]{80,}'''
+keywords = ["v1.public."]
