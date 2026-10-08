@@ -8,7 +8,7 @@ AWS usage can incur charges. Set a billing alert in your account before creating
 
 ## 1. Authenticate and create resources
 
-Configure your own AWS CLI profile, preferably with temporary SSO credentials. Run `aws configure sso --profile itinerary-dev`, then `aws sso login --profile itinerary-dev` if your account uses IAM Identity Center. Otherwise use a credential method approved by your account administrator.
+Configure your own AWS CLI profile, preferably with temporary SSO credentials. Run `aws configure sso --profile itinerary-dev`, then `aws sso login --profile itinerary-dev` if your account uses IAM Identity Center. If you use an IAM user instead, run `aws configure --profile itinerary-dev` and enter that user’s credentials only at the CLI prompts. Never use root account access keys. This stores credentials outside the repository in your AWS configuration. Use an identity with provisioning permissions for Terraform and a separate application identity with the generated policy for the backend.
 
 From the repository root, confirm the account and review the plan before applying it.
 
@@ -39,6 +39,8 @@ Terraform uses local state. State and plan files are gitignored and must remain 
 
 Attach the policy named by `local_backend_policy_arn` to the role used by your development AWS profile. For an SSO profile, an account administrator can include it in the role's permission set. Terraform deliberately does not create permanent access keys or assign permissions to a person.
 
+For a regular IAM role, open **IAM → Roles → your development role → Add permissions → Attach policies**, select the policy named by that output and attach it. For an IAM user profile, attach it under that user’s permissions instead. For IAM Identity Center, add the policy as a customer-managed policy reference in the relevant permission set, provision the permission set to the account, then sign in again. You need an account administrator to do this if your own identity cannot manage permissions.
+
 Use a separate provisioning profile if needed. The backend only needs the generated application policy, not administrator permissions. Its DynamoDB permissions are restricted to the four application tables. Places v2 actions use `Resource: "*"` because those operations do not support individual place resource ARNs.
 
 Copy `backend/.env.example` to `backend/.env` and set your application profile. Fill in `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` from Terraform outputs. The example table names match the created tables.
@@ -51,7 +53,7 @@ The generated Cognito client has **no client secret**, supports password sign-in
 
 ### Maps and search
 
-Create an Amazon Location API key in your AWS account using the console. Restrict it to the `location_map_arn` and `location_place_index_arn` outputs and these actions.
+In the AWS console, select the same region as Terraform, open **Amazon Location Service → API keys** and create a key for this application. Use the existing named map and place index from Terraform rather than creating different resources. Restrict the key to the `location_map_arn` and `location_place_index_arn` outputs and these actions.
 
 - `geo:GetMapStyleDescriptor`
 - `geo:GetMapGlyphs`
@@ -60,7 +62,7 @@ Create an Amazon Location API key in your AWS account using the console. Restric
 - `geo:SearchPlaceIndexForText`
 - `geo:SearchPlaceIndexForSuggestions`
 
-Set an expiry and the allowed referrer `http://localhost:5173/*`. Put the key in `VITE_AWS_LOCATION_API_KEY`, and use the map and index names from the outputs. If you choose another browser origin, the local server's CORS policy must also be updated deliberately.
+Copy the generated key into your ignored environment file, not into Git or an issue. The key value is not a Terraform output because it is created separately. Set an expiry and the allowed referrer `http://localhost:5173/*`. Put the key in `VITE_AWS_LOCATION_API_KEY`, and use the map and index names from the outputs. If you choose another browser origin, the local server's CORS policy must also be updated deliberately.
 
 Browser keys are visible to users. Referrer restrictions reduce casual misuse but are not authentication or a spending limit. Never substitute an AWS access key for a Location browser key.
 
@@ -74,9 +76,23 @@ Without this key, automatic ground-travel estimates are unavailable. Estimates u
 
 ## 4. Start and verify
 
-Follow the [local server commands](../README.md#run-locally). Register with an email address you can access and confirm the code. Create a trip, select a place and add an activity. Reload to check persistence, then edit and delete that test trip. Check maps and search, and travel estimates if configured.
+Follow the [local server commands](../README.md#4-start-and-check-the-app). Register with an email address you can access and confirm the code. Create a trip, select a place and add an activity. Reload to check persistence, then edit and delete that test trip. Check maps and search, and travel estimates if configured.
 
-If sign-in fails, check the app client ID and region. For backend 401 responses, check that both environment files identify the same Cognito client and that the backend pool ID is correct. For AWS access errors, check profile expiry, the selected account and the role's policy. For map errors, check key expiry, referrers, resource restrictions and region.
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Cannot authenticate the AWS CLI | Use `aws sts get-caller-identity --profile itinerary-dev`. Renew an expired SSO login with `aws sso login --profile itinerary-dev`. |
+| Terraform reports an existing resource | Use a separate account or deliberately import resources you own. Do not delete unrelated tables to make the plan pass. |
+| Sign-in fails | Verify the Cognito app client ID and region. Confirm the registration email before signing in. |
+| No confirmation email | Check spam, Cognito email delivery limits and the correct AWS region. |
+| Backend returns 401 | Match the Cognito client IDs in both environment files, check the backend pool ID, and sign in again. |
+| Backend reports AWS access denied | Check the profile named in `backend/.env`, its session expiry and the application policy attached to its role. |
+| Map or search fails | Check the Location key expiry, exact referrer, region, allowed actions and resource ARNs. |
+| Routes are unavailable | Supply the separate Routes v2 key. Some routes and transport modes have no provider result. |
+| Browser reports CORS or connection errors locally | Start both servers, use `http://localhost:5173` and keep both API URLs at `http://localhost:3001`. |
+
+Restart the local servers after editing configuration. A hosted frontend must be rebuilt to use changed `VITE_` values.
 
 ## Clean up
 
@@ -84,4 +100,4 @@ Stop both local servers and delete Location API keys you created separately. To 
 
 ## Hosting your own version
 
-`backend/src/lambda.ts` remains available as a Lambda entry point, but this development setup does not provision hosting. A hosted version needs your own HTTPS frontend and API, a scoped Lambda execution role, the backend environment variables and an exact `FRONTEND_ORIGIN`. Configure any API Gateway JWT authoriser against your Cognito pool and client. Supply both frontend API URLs at build time. Do not expose the local development server to the internet.
+Follow [Deploy on AWS](../docs/hosting.md) after confirming the local application works. It uses the same data resources with a Lambda backend, an authenticated HTTP API and a private S3 bucket behind CloudFront. These hosting resources are configured separately from this Terraform module.
