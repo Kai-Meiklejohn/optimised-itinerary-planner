@@ -4,6 +4,28 @@ A React and TypeScript travel planner built for COMPX527. Create trips, organise
 
 **The original hosted service has been retired.** There is no public demo or shared AWS account. This release keeps the application and reusable AWS integrations, with setup for your own account.
 
+## Screenshots
+
+These screenshots show the original application with an example itinerary. Running your own version requires the AWS setup below.
+
+### Sign in
+
+Sign in to your account, register as a new user or reset a forgotten password.
+
+![Sign-in screen with email and password fields](docs/screenshots/sign-in.png)
+
+### Trip dashboard
+
+View your saved itineraries and their dates, open an existing trip or create a new one.
+
+![Trip dashboard showing a New Zealand holiday itinerary](docs/screenshots/dashboard.png)
+
+### Daily planner
+
+Switch between days, add or edit activities and organise their times, categories and notes. Numbered map pins show saved places, with optional travel-time estimates between stops.
+
+![Daily itinerary with scheduled Auckland activities, travel estimates and numbered map pins](docs/screenshots/daily-planner.png)
+
 ## Run locally
 
 Use Node.js 24 LTS and npm. Tests and builds work without AWS. Signing in, saving trips and using maps require your own AWS resources, even when the servers run locally.
